@@ -1,0 +1,9 @@
+Package: iot
+Version: 1.0-1
+Architecture: armhf
+Maintainer: Jeffrey Dare <jeffdare@in.ibm.com>
+Installed-Size: 298
+Section: unknown
+Priority: extra
+Homepage: <insert the upstream URL, if relevant>
+Description: Sample iot application

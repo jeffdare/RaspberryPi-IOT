@@ -1,0 +1,13 @@
+***********Entering the IOT raspberry pi device********************
+Creating the .lck file
+The finnal json is :: {"d": {"myName": "Demo Pi", "cputemp": 26, "sine": -10, "cpuload": 1.45}} 
+Waiting for publication of {"d": {"myName": "Demo Pi", "cputemp": 26, "sine": -10, "cpuload": 1.45}}
+on topic iot-1/d/b827eba84426/evt/rpi-quickstart/json for client with ClientID: iot-1/d/b827eba84426/evt/rpi-quickstart/json
+Connect failed, rc 0
+Posted the message with result code = 0Waiting for publication of {"d": {"myName": "Demo Pi", "cputemp": 26, "sine": -10, "cpuload": 1.45}}
+on topic iot-1/d/b827eba84426/evt/rpi-quickstart/json for client with ClientID: iot-1/d/b827eba84426/evt/rpi-quickstart/json
+Posted the message with result code = 0Waiting for publication of {"d": {"myName": "Demo Pi", "cputemp": 26, "sine": -10, "cpuload": 1.45}}
+on topic iot-1/d/b827eba84426/evt/rpi-quickstart/json for client with ClientID: iot-1/d/b827eba84426/evt/rpi-quickstart/json
+Posted the message with result code = 0Waiting for publication of {"d": {"myName": "Demo Pi", "cputemp": 26, "sine": -10, "cpuload": 1.45}}
+on topic iot-1/d/b827eba84426/evt/rpi-quickstart/json for client with ClientID: iot-1/d/b827eba84426/evt/rpi-quickstart/json
+Posted the message with result code = 0

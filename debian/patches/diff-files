@@ -1,0 +1,275 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ iot (1.0-1) unstable; urgency=low
+ .
+   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+Author: Jeffrey Dare <jeffdare@in.ibm.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: http://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: <YYYY-MM-DD>
+
+--- /dev/null
++++ iot-1.0/iotmain.c
+@@ -0,0 +1,98 @@
++#include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
++#include <unistd.h>
++
++char propFileLoc[20] = "./iot.properties";
++char lockFileLoc[10] = "./.lck";
++char pidFileLoc[10] = "./.pid";
++
++#define MAXBUF 100
++
++struct config {
++	char hostname[MAXBUF];
++	char timout[MAXBUF];
++	char tenantprefix[MAXBUF];
++};
++
++float getCPUTemp();
++char *getmac(char *iface);
++void get_config(char* filename, struct config * configstr);
++char *getClientId(char* tenant_prefix, char* mac_address);
++
++int main(int argc, char **argv) {
++	printf("***********Entering the IOT raspberry pi device********************\n");
++
++	struct config configstr;
++	char* clientId;
++	int lckStatus;
++
++	float temp = getCPUTemp();
++	char* mac_address = getmac("eth0");
++
++	//first check if there is another process already started
++	if (access(lockFileLoc, F_OK) != -1) {
++		printf("There is another process of IOT-Raspberry running. Please close that before starting. If there are no other IOT-Raspberry process running, please delete the .lck file and start again\n");
++	} else {
++		FILE *fp;
++		fp = fopen(lockFileLoc, "w");
++		printf("Creating the .lck file\n");
++		fclose(fp);
++	}
++
++	// to load the config files
++	get_config(propFileLoc, &configstr);
++
++	printf("The temp is %.2f\n", temp);
++	printf("THe mac address is %s\n", mac_address);
++
++	clientId = getClientId(configstr.tenantprefix, mac_address);
++
++	printf("THe value of hostname is %s\n", configstr.hostname);
++
++	return 0;
++}
++
++void get_config(char * filename, struct config * configstr) {
++
++	FILE* prop;
++	char str1[10], str2[10];
++	prop = fopen(filename, "r");
++	if( prop == NULL )
++   	{
++      		perror("Error while opening the properties file. Please ensure that the properties file exist in this directory\n");
++      		exit(1);
++   	}
++	char line[256];
++	int linenum = 0;
++	while (fgets(line, 256, prop) != NULL) {
++		char prop[256], value[256];
++
++		linenum++;
++		if (line[0] == '#')
++			continue;
++
++		if (sscanf(line, "%s %s", prop, value) != 2) {
++			fprintf(stderr, "Syntax error, line %d\n", linenum);
++			continue;
++		}
++		if (strcmp(prop, "hostname") == 0)
++			strncpy(configstr->hostname, value, MAXBUF);
++		else if (strcmp(prop, "timout") == 0)
++			strncpy(configstr->timout, value, MAXBUF);
++		else if (strcmp(prop, "tenantprefix") == 0)
++			strncpy(configstr->tenantprefix, value, MAXBUF);
++
++	}
++
++}
++
++char *getClientId(char* tenant_prefix, char* mac_address) {
++	char* clientid;
++
++	clientid = strcat(tenant_prefix, ":");
++	clientid = strcat(clientid, mac_address);
++
++	return clientid;
++}
++
+--- /dev/null
++++ iot-1.0/Makefile
+@@ -0,0 +1,17 @@
++BINDIR=$(DESTDIR)/opt/iot
++
++all: iot
++
++.PHONY: all install clean distclean
++
++iot:
++	$(CC) iotmain.c cpustat.c mac.c -o $@
++	strip $@
++
++install: iot
++	mkdir -p $(BINDIR)
++	install iot $(BINDIR)/iot
++	install iot.properties $(BINDIR)/iot
++
++clean:
++	rm -f iot
+--- /dev/null
++++ iot-1.0/cpustat.c
+@@ -0,0 +1,55 @@
++/*
++ * C Program to get the stats for CPU.
++ * Currently it gets the CPU temperature and CPU usage across 1 minute
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++int PATHSIZE = 255;
++int SIZE = 8;
++char cputemploc[255] = "/sys/class/thermal/thermal_zone0/temp";
++char cpuloadloc[255] = "/proc/loadavg";
++
++float getCPUTemp();
++int GetCPULoad();
++
++/*int main(int argc, char **argv) {
++	float tempincpu;
++	int usage = 0;
++
++	tempincpu = getCPUTemp();
++	usage = GetCPULoad();
++	printf("The temp of the cpu is %0.2f and the usage is %d percent\n",tempincpu,usage);
++	
++}*/
++
++float getCPUTemp() {
++	FILE * cputemp = NULL;
++	char buffer [SIZE];
++	long tempinmillic;
++	float tempinc;
++
++	memset(buffer, 0, sizeof(buffer));
++	cputemp = fopen(cputemploc, "r");
++
++	fgets(buffer, SIZE, cputemp);
++
++	tempinmillic = atol(buffer);
++	tempinc = tempinmillic * 1.0 / 1000.0;
++
++	fclose(cputemp);
++	return tempinc;
++}
++
++int GetCPULoad() {
++	
++	FILE *f1;
++        float load1,load5,load15;
++
++        f1 = fopen(cpuloadloc, "r");
++        fscanf(f1, "%f\t%f\t%f\t", &load1, &load5, &load15 );
++        return (int)(load15 * 100);
++
++}
+--- /dev/null
++++ iot-1.0/iot.properties
+@@ -0,0 +1,5 @@
++#this is the configuration file...
++hostname something.com
++timout 100
++tenantprefix someone
++#End of Configuration file.
+--- iot-1.0.orig/mac.c
++++ iot-1.0/mac.c
+@@ -1,25 +1,38 @@
+-#include<stdio.h>
+-#include<stdlib.h>
++#include <sys/socket.h>
++#include <sys/ioctl.h>
++#include <netdb.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <linux/if.h>
+ 
+-int main(){
+-char mac_add_loc[256] = "/sys/class/net/eth0/address";
+-char cpu_temp_loc[256] = "";
+-FILE *fp;
+-char ch;
+-//printf("Feteching MAC Address from file %s", mac_add_loc);
+-fp = fopen(mac_add_loc,"r");
++#define MAC_STRING_LENGTH 13
+ 
+-if( fp == NULL ) {
+- printf("Error while openeing the file");
+- exit(EXIT_FAILURE);
+-}
+-printf("Mac address is - ");
+-
+-int ctr = 0;
+-while( ( ch = fgetc(fp) ) != EOF && ++ctr <=17 )
+-   printf("%c",ch);
++char *getmac(char *iface)
++{
++  char *ret = malloc(MAC_STRING_LENGTH);
++  struct ifreq s;
++  
++  int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+ 
+-fclose(fp);
++  strcpy(s.ifr_name, iface);
++  if (fd >= 0 && ret && 0 == ioctl(fd, SIOCGIFHWADDR, &s))
++  {
++    int i;
++    for (i = 0; i < 6; ++i)
++      snprintf(ret+i*2,MAC_STRING_LENGTH-i*2,"%02x",(unsigned char) s.ifr_addr.sa_data[i]);
++  }
++  else
++  {
++    perror("malloc/socket/ioctl failed");
++    exit(1);
++  }
++  return(ret);
++}
+ 
+-return 0;
+-}
+\ No newline at end of file
++/*int main()
++{
++  char *mac = getmac("eth0");
++  printf("%s\n",mac);
++  free(mac);
++}*/

@@ -1,0 +1,14 @@
+Source: iot
+Section: unknown
+Priority: extra
+Maintainer: Jeffrey Dare <jeffdare@in.ibm.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Homepage: <insert the upstream URL, if relevant>
+#Vcs-Git: git://git.debian.org/collab-maint/iot.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/iot.git;a=summary
+
+Package: iot
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Sample iot application
